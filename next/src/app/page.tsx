@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRightIcon, CloudOffIcon, DumbbellIcon, FootprintsIcon, ShieldCheckIcon } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ScoreGauge } from "@/components/score-gauge";
+import { SweatLevelBar } from "@/components/sweat-level-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,9 +39,9 @@ export default function Home() {
           <div className="absolute -inset-10 -rotate-3 rounded-[2.5rem] border border-pulse/30" aria-hidden="true" />
           <Card className="relative border-0 bg-card/95 shadow-2xl">
             <CardHeader className="border-b"><div className="flex items-center justify-between"><Badge>Today · live preview</Badge><span className="size-2 rounded-full bg-pulse" aria-label="Synced" /></div><CardTitle className="display mt-4 text-4xl uppercase">Your week has a pulse.</CardTitle><CardDescription>One score, with every component visible.</CardDescription></CardHeader>
-            <CardContent className="grid gap-8 pt-3 sm:grid-cols-[auto_1fr] sm:items-center">
-              <ScoreGauge score={demoScore} />
-              <div className="flex flex-col gap-5">{[["Consistency", demoScore.consistency, "40"], ["Momentum", demoScore.momentum, "30"], ["Recency", demoScore.recency, "30"]].map(([label, value, max]) => <div key={label as string}><div className="mb-2 flex justify-between text-sm"><span>{label}</span><span className="font-semibold tabular-nums">{value}/{max}</span></div><div className="h-1.5 bg-muted"><div className="h-full bg-pulse" style={{ width: `${(Number(value) / Number(max)) * 100}%` }} /></div></div>)}</div>
+            <CardContent className="grid gap-8 pt-3">
+              <SweatLevelBar score={demoScore} />
+              <div className="grid gap-5 sm:grid-cols-3">{[["Consistency", demoScore.consistency, "40"], ["Momentum", demoScore.momentum, "30"], ["Recency", demoScore.recency, "30"]].map(([label, value, max]) => <div key={label as string}><div className="mb-2 flex justify-between text-sm"><span>{label}</span><span className="font-semibold tabular-nums">{value}/{max}</span></div><div className="h-1.5 bg-muted"><div className="h-full bg-pulse" style={{ width: `${(Number(value) / Number(max)) * 100}%` }} /></div></div>)}</div>
             </CardContent>
           </Card>
         </div>

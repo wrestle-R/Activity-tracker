@@ -1,6 +1,6 @@
-import { Check, CloudOff, RefreshCw, Settings as SettingsIcon } from 'lucide-react-native';
+import { Check, CloudOff, ExternalLink, RefreshCw, Settings as SettingsIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/screen';
 import { AppButton, AppInput, AppText, Card, Pill, SectionHeading } from '@/components/ui/primitives';
 import { radius, spacing, ThemePreference } from '@/constants/theme';
@@ -9,6 +9,7 @@ import { useSweatlineTheme } from '@/contexts/theme-context';
 import { getSupabase, isSupabaseConfigured, syncActivities } from '@/lib/supabase';
 
 const themes: { value: ThemePreference; label: string }[] = [{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
+const webUrl = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://sweatline-rdp.vercel.app';
 
 export default function SettingsScreen() {
   const { colors, preference, setPreference } = useSweatlineTheme(); const { activities } = useActivities();
@@ -20,7 +21,7 @@ export default function SettingsScreen() {
     <SectionHeading eyebrow="Appearance" title="Theme" /><View style={[styles.segment, { backgroundColor: colors.elevated }]}>{themes.map((theme) => { const active = preference === theme.value; return <Pressable key={theme.value} accessibilityRole="radio" accessibilityState={{ checked: active }} onPress={() => setPreference(theme.value)} style={[styles.segmentButton, active && { backgroundColor: colors.pulse }]}><AppText variant="label" style={{ color: active ? colors.pulseText : colors.muted }}>{theme.label}</AppText></Pressable>; })}</View>
     <SectionHeading eyebrow="Training" title="Units" /><Card style={styles.unitCard}><ChoiceRow title="Run distance" description="Distance and pace display" options={['km', 'mi']} value={distanceUnit} onChange={(value) => setDistanceUnit(value as 'km' | 'mi')} /><View style={{ height: 1, backgroundColor: colors.border }} /><ChoiceRow title="Gym weight" description="Working-set load" options={['kg', 'lb']} value={weightUnit} onChange={(value) => setWeightUnit(value as 'kg' | 'lb')} /></Card>
     <SectionHeading eyebrow="Account" title="Supabase sync" action={<Pill tone={isSupabaseConfigured ? 'pulse' : 'neutral'}>{isSupabaseConfigured ? 'Ready' : 'Offline'}</Pill>} /><Card><View style={styles.syncStatus}>{isSupabaseConfigured ? <Check size={20} color={colors.pulse} /> : <CloudOff size={20} color={colors.muted} />}<View style={styles.syncCopy}><AppText variant="label">{isSupabaseConfigured ? 'Client configured' : 'Local mode is active'}</AppText><AppText muted>{isSupabaseConfigured ? 'Sign in to sync your private rows.' : 'Add the project public key to enable Auth and sync.'}</AppText></View></View>{isSupabaseConfigured && <><AppInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="Email" textContentType="emailAddress" /><AppInput value={password} onChangeText={setPassword} secureTextEntry placeholder="Password" textContentType="password" /><AppButton label="Sign in" variant="secondary" onPress={signIn} loading={working} full /></>}<AppButton label="Sync now" icon={<RefreshCw size={18} color={colors.pulseText} />} onPress={sync} loading={working} disabled={!isSupabaseConfigured} full />{message ? <AppText muted>{message}</AppText> : null}</Card>
-    <Card><AppText variant="eyebrow" muted>About</AppText><AppText variant="title">Sweatline 1.0.0</AppText><AppText muted>Manual by design. Offline by default. Your Sweat Score explains every point.</AppText></Card>
+    <Card><AppText variant="eyebrow" muted>About</AppText><AppText variant="title">Sweatline 1.0.0</AppText><AppText muted>Manual by design. Offline by default. Your Sweat Level explains every point.</AppText><AppButton label="Open web dashboard" variant="secondary" icon={<ExternalLink size={18} color={colors.text} />} onPress={() => Linking.openURL(webUrl)} full /></Card>
   </Screen>;
 }
 
@@ -30,4 +31,3 @@ function ChoiceRow({ title, description, options, value, onChange }: { title: st
 }
 
 const styles = StyleSheet.create({ header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl }, icon: { width: 52, height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' }, segment: { padding: 4, borderRadius: radius.md, flexDirection: 'row', gap: 4 }, segmentButton: { flex: 1, minHeight: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }, unitCard: { gap: 0 }, choiceRow: { minHeight: 80, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 12 }, choiceCopy: { flex: 1 }, choices: { flexDirection: 'row', gap: 6 }, choice: { minWidth: 52, minHeight: 44, borderWidth: 1, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' }, syncStatus: { flexDirection: 'row', gap: 12, alignItems: 'center' }, syncCopy: { flex: 1 } });
-

@@ -2,6 +2,7 @@
   "expo": {
     "name": "Sweatline",
     "slug": "sweatline",
+    "owner": "russeldp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,6 +12,7 @@
       "icon": "./assets/images/icon.png"
     },
     "android": {
+      "package": "com.russeldp.sweatline",
       "adaptiveIcon": {
         "backgroundColor": "#11130F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -38,6 +40,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "webUrl": "https://sweatline-rdp.vercel.app",
+      "router": {},
+      "eas": {
+        "projectId": "73c97f6a-2adf-493b-8d7e-61c6cbbb298c"
+      }
     }
   }
 }
