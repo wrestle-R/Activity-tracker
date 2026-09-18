@@ -41,12 +41,6 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {
-      "webUrl": "https://sweatline-rdp.vercel.app",
-      "router": {},
-      "eas": {
-        "projectId": "73c97f6a-2adf-493b-8d7e-61c6cbbb298c"
-      }
-    }
+    "extra": { "router": {}, "eas": { "projectId": "73c97f6a-2adf-493b-8d7e-61c6cbbb298c" } }
   }
 }

@@ -136,10 +136,10 @@
 }
 
 .grain {
-  background-image: radial-gradient(circle at 20% 10%, color-mix(in oklch, var(--pulse) 12%, transparent) 0, transparent 28%), radial-gradient(circle at 90% 85%, color-mix(in oklch, var(--warm) 10%, transparent) 0, transparent 30%);
+  background-color: var(--background);
+  background-image: radial-gradient(circle at 15% 8%, color-mix(in oklch, var(--pulse) 10%, transparent) 0, transparent 32%);
 }
 .display { font-family: var(--font-display), sans-serif; letter-spacing: -.025em; }
 .balance { text-wrap: balance; }
 .lift { transition: transform 180ms ease, box-shadow 180ms ease; }
 .lift:hover { transform: translateY(-3px); box-shadow: 0 18px 50px color-mix(in oklch, var(--foreground) 10%, transparent); }
-

@@ -1,28 +1,31 @@
+export type Exercise = { group: string; name: string; targetSets: number; targetReps: string };
+export type Template = { id: string; name: string; category: "push" | "pull" | "legs" | "custom"; exercises: Exercise[]; client_updated_at: string; deleted_at?: string | null };
+export type Workout = { id: string; name: string; performed_at: string; exercises: { name: string; weight?: number; reps?: number; sets?: number }[]; notes?: string | null };
+export type Run = { id: string; title: string | null; performed_at: string; distance_km: number; duration_seconds: number; strava_url?: string | null; notes?: string | null };
 export type ScoreBreakdown = { total: number; consistency: number; momentum: number; recency: number; label: string };
 
-export function calculateSweatScore(input: { sessionsLast7: number; currentLoad: number; trailingAverageLoad: number; daysSinceLastActivity: number; weeklyTarget?: number }): ScoreBreakdown {
-  const consistency = Math.min(input.sessionsLast7 / (input.weeklyTarget ?? 4), 1) * 40;
-  const ratio = input.trailingAverageLoad > 0 ? input.currentLoad / input.trailingAverageLoad : input.currentLoad > 0 ? 1 : 0;
-  const momentum = Math.min(Math.max(ratio, 0), 1) * 30;
-  const recency = input.daysSinceLastActivity <= 2 ? 30 : input.daysSinceLastActivity >= 7 ? 0 : 30 * (1 - (input.daysSinceLastActivity - 2) / 5);
+export function calculateSweatScore(items: Array<{ performed_at: string; load: number }>, weeklyTarget = 4): ScoreBreakdown {
+  const now = Date.now();
+  const age = (date: string) => now - new Date(date).getTime();
+  const current = items.filter((item) => age(item.performed_at) <= 7 * 86400000);
+  const previous = items.filter((item) => age(item.performed_at) > 7 * 86400000 && age(item.performed_at) <= 35 * 86400000);
+  const currentLoad = current.reduce((sum, item) => sum + item.load, 0);
+  const baseline = previous.reduce((sum, item) => sum + item.load, 0) / 4;
+  const consistency = Math.min(current.length / weeklyTarget, 1) * 40;
+  const momentum = baseline > 0 ? Math.min(currentLoad / baseline, 1) * 30 : currentLoad > 0 ? 30 : 0;
+  const newest = [...items].sort((a, b) => +new Date(b.performed_at) - +new Date(a.performed_at))[0];
+  const days = newest ? Math.max(0, age(newest.performed_at) / 86400000) : 8;
+  const recency = days <= 2 ? 30 : days >= 7 ? 0 : 30 * (1 - (days - 2) / 5);
   const total = Math.round(consistency + momentum + recency);
-  const label = total >= 80 ? "Locked in" : total >= 60 ? "Building" : total >= 35 ? "Finding rhythm" : "Cooling off";
-  return { total, consistency: Math.round(consistency), momentum: Math.round(momentum), recency: Math.round(recency), label };
+  return { total, consistency: Math.round(consistency), momentum: Math.round(momentum), recency: Math.round(recency), label: total >= 80 ? "Locked in" : total >= 60 ? "Building" : total >= 35 ? "Finding rhythm" : total ? "Cooling off" : "Start your line" };
 }
 
-export const demoScore = calculateSweatScore({ sessionsLast7: 4, currentLoad: 118, trailingAverageLoad: 126, daysSinceLastActivity: 1 });
+export function workoutLoad(workout: Workout) {
+  return workout.exercises.reduce((sum, item) => sum + Number(item.weight ?? 0) * Number(item.reps ?? 0) * Number(item.sets ?? 0), 0) / 100;
+}
 
-export const trend = [
-  { day: "M", load: 42, baseline: 44 }, { day: "T", load: 56, baseline: 48 }, { day: "W", load: 54, baseline: 50 },
-  { day: "T", load: 71, baseline: 55 }, { day: "F", load: 68, baseline: 58 }, { day: "S", load: 84, baseline: 62 }, { day: "S", load: 82, baseline: 64 },
-];
-
-export const templates = [
-  { name: "Push Day 1", category: "Push", exercises: 5, detail: "Chest · shoulders · triceps" },
-  { name: "Push Day 2", category: "Push", exercises: 5, detail: "Shoulders · chest · triceps" },
-  { name: "Pull Day 1", category: "Pull", exercises: 8, detail: "Back · biceps · rear delts" },
-  { name: "Pull Day 2", category: "Pull", exercises: 8, detail: "Back · biceps · rear delts" },
-  { name: "Leg Day 1", category: "Legs", exercises: 5, detail: "Quads · hamstrings · calves" },
-  { name: "Leg Day 2", category: "Legs", exercises: 5, detail: "Glutes · hamstrings · calves" },
-];
-
+export function formatPace(distanceKm: number, durationSeconds: number) {
+  if (!distanceKm || !durationSeconds) return "—";
+  const seconds = Math.round(durationSeconds / distanceKm);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} /km`;
+}
