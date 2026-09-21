@@ -13,7 +13,15 @@ export const metadata: Metadata = {
   description: "A focused, offline-first log for lifting, running, and the line between them.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#11130f" };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f1e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#11130f" },
+  ],
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

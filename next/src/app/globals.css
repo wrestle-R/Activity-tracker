@@ -88,6 +88,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(.16 .012 104);
   --foreground: oklch(.94 .012 94);
   --card: oklch(.205 .014 105);
@@ -126,7 +127,7 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  html { @apply font-sans; scroll-behavior: smooth; }
+  html { @apply font-sans; color-scheme: light; scroll-behavior: smooth; }
   body { @apply bg-background text-foreground; }
   button, a { @apply touch-manipulation; }
 }

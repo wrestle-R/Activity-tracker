@@ -15,7 +15,68 @@ export default async function DashboardPage() {
   const weeklyRuns = runs.filter((item) => withinWeek(item.performed_at));
   const weeklyDistance = weeklyRuns.reduce((sum, item) => sum + Number(item.distance_km), 0);
   const recent = [...workouts.map((item) => ({ kind: "workout" as const, item })), ...runs.map((item) => ({ kind: "run" as const, item }))].sort((a, b) => +new Date(b.item.performed_at) - +new Date(a.item.performed_at)).slice(0, 4);
-  const chart = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setDate(date.getDate() - (6 - index)); return { day: new Intl.DateTimeFormat("en", { weekday: "narrow" }).format(date), sessions: [...workouts, ...runs].filter((item) => new Date(item.performed_at).toDateString() === date.toDateString()).length }; });
-  const stats = [{ icon: DumbbellIcon, value: String(weeklyWorkouts.length), unit: "", label: "Gym sessions" }, { icon: FootprintsIcon, value: weeklyDistance.toFixed(1), unit: "km", label: "Run distance" }, { icon: PlusIcon, value: String(weeklyWorkouts.length + weeklyRuns.length), unit: "", label: "Activities" }];
-  return <div className="flex flex-col gap-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><Badge className="mb-3">{profile?.username || "Athlete"}</Badge><h1 className="display text-5xl font-bold uppercase sm:text-6xl">Keep the line moving.</h1><p className="mt-2 text-muted-foreground">Your dashboard uses only the sessions you have logged.</p></div><div className="flex gap-2"><Button variant="outline" nativeButton={false} render={<Link href="/runs" />}><FootprintsIcon data-icon="inline-start" />Log run</Button><Button nativeButton={false} render={<Link href="/workouts" />}><PlusIcon data-icon="inline-start" />Log workout</Button></div></div><div className="grid grid-cols-2 gap-4 lg:grid-cols-3">{stats.map((item) => <Card key={item.label}><CardHeader><item.icon className="size-5 text-pulse" /><CardDescription>{item.label}</CardDescription></CardHeader><CardContent><p className="display text-4xl font-bold tabular-nums">{item.value} {item.unit && <span className="text-xl">{item.unit}</span>}</p><p className="mt-1 text-xs text-muted-foreground">This week</p></CardContent></Card>)}</div><Card className="overflow-hidden border-0 bg-foreground text-background"><CardHeader><CardTitle className="display text-3xl uppercase">Training rhythm</CardTitle><CardDescription className="text-background/60">A habit signal, not a recovery or injury-risk score.</CardDescription><CardAction><Badge variant="secondary">{score.label}</Badge></CardAction></CardHeader><CardContent className="grid gap-8 pb-7"><SweatLevelBar score={score} /><div className="grid gap-4 sm:grid-cols-3">{[["Active days", score.consistency, "This week"], ["Four-week rhythm", score.rhythm, "Weeks with movement"], ["Recency", score.recency, "Time since activity"]].map(([label, value, detail]) => <div key={String(label)} className="border-l-2 border-pulse pl-4"><div className="flex items-baseline justify-between"><span className="font-semibold">{label}</span><span className="display text-3xl font-bold tabular-nums">{value}</span></div><p className="text-sm text-background/55">{detail}</p></div>)}</div></CardContent></Card><div className="grid gap-6 xl:grid-cols-[1fr_360px]"><Card><CardHeader><CardTitle className="display text-2xl uppercase">Seven-day activity</CardTitle><CardDescription>How often you moved each day, without mixing sports into a fake load number.</CardDescription></CardHeader><CardContent><ActivityChart data={chart} /></CardContent></Card><Card><CardHeader><CardTitle className="display text-2xl uppercase">Recent line</CardTitle><CardDescription>Your latest saved sessions.</CardDescription></CardHeader><CardContent className="flex flex-col gap-5">{recent.length ? recent.map(({ kind, item }) => <div key={item.id} className="flex items-center gap-3"><span className="size-2 shrink-0 bg-pulse" /><div className="min-w-0 flex-1"><p className="font-semibold">{kind === "workout" ? item.name : item.title || "Run"}</p><p className="text-sm text-muted-foreground">{new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(item.performed_at))}</p></div><span className="text-sm font-semibold tabular-nums">{kind === "workout" ? String(Math.round(workoutLoad(item) * 100).toLocaleString()) + " kg" : Number(item.distance_km).toFixed(2) + " km"}</span></div>) : <p className="text-sm text-muted-foreground">No sessions yet. Your first log starts the line.</p>}</CardContent></Card></div></div>;
+  const chart = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    return {
+      day: new Intl.DateTimeFormat("en", { weekday: "narrow" }).format(date),
+      sessions: [...workouts, ...runs].filter((item) => new Date(item.performed_at).toDateString() === date.toDateString()).length,
+    };
+  });
+  const stats = [
+    { icon: DumbbellIcon, value: String(weeklyWorkouts.length), unit: "", label: "Gym Sessions" },
+    { icon: FootprintsIcon, value: weeklyDistance.toFixed(1), unit: "km", label: "Run Distance" },
+    { icon: PlusIcon, value: String(weeklyWorkouts.length + weeklyRuns.length), unit: "", label: "Activities" },
+  ];
+
+  return <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <Badge className="mb-3">{profile?.username || "Athlete"}</Badge>
+        <h1 className="display text-balance text-5xl font-bold uppercase sm:text-6xl">Keep the line moving.</h1>
+        <p className="mt-2 text-muted-foreground">Your dashboard uses only the sessions you have logged.</p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" nativeButton={false} render={<Link href="/runs" />}><FootprintsIcon data-icon="inline-start" />Log Run</Button>
+        <Button nativeButton={false} render={<Link href="/workouts" />}><PlusIcon data-icon="inline-start" />Log Workout</Button>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      {stats.map((item) => <Card key={item.label}>
+        <CardHeader><item.icon className="size-5 text-pulse" /><CardDescription>{item.label}</CardDescription></CardHeader>
+        <CardContent><p className="display text-4xl font-bold tabular-nums">{item.value} {item.unit && <span className="text-xl">{item.unit}</span>}</p><p className="mt-1 text-xs text-muted-foreground">This Week</p></CardContent>
+      </Card>)}
+    </div>
+
+    <Card className="overflow-hidden border-pulse/25 bg-card">
+      <CardHeader>
+        <CardTitle className="display text-3xl uppercase">Training Rhythm</CardTitle>
+        <CardDescription>A habit signal, not a recovery or injury-risk score.</CardDescription>
+        <CardAction><Badge variant="outline">{score.label}</Badge></CardAction>
+      </CardHeader>
+      <CardContent className="grid gap-8 pb-7">
+        <SweatLevelBar score={score} />
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[["Active Days", score.consistency, "This week"], ["Four-Week Rhythm", score.rhythm, "Weeks with movement"], ["Recency", score.recency, "Time since activity"]].map(([label, value, detail]) => <div key={String(label)} className="border-l-2 border-pulse pl-4">
+            <div className="flex items-baseline justify-between"><span className="font-semibold">{label}</span><span className="display text-3xl font-bold tabular-nums">{value}</span></div>
+            <p className="text-sm text-muted-foreground">{detail}</p>
+          </div>)}
+        </div>
+      </CardContent>
+    </Card>
+
+    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <Card>
+        <CardHeader><CardTitle className="display text-2xl uppercase">Seven-Day Activity</CardTitle><CardDescription>How often you moved each day, without mixing sports into a fake load number.</CardDescription></CardHeader>
+        <CardContent><ActivityChart data={chart} /></CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="display text-2xl uppercase">Recent Line</CardTitle><CardDescription>Your latest saved sessions.</CardDescription></CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          {recent.length ? recent.map(({ kind, item }) => <div key={item.id} className="flex min-w-0 items-center gap-3"><span className="size-2 shrink-0 bg-pulse" /><div className="min-w-0 flex-1"><p className="truncate font-semibold">{kind === "workout" ? item.name : item.title || "Run"}</p><p className="text-sm text-muted-foreground">{new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(item.performed_at))}</p></div><span className="text-sm font-semibold tabular-nums">{kind === "workout" ? String(Math.round(workoutLoad(item) * 100).toLocaleString()) + " kg" : Number(item.distance_km).toFixed(2) + " km"}</span></div>) : <p className="text-sm text-muted-foreground">No sessions yet. Your first log starts the line.</p>}
+        </CardContent>
+      </Card>
+    </div>
+  </div>;
 }
