@@ -10,3 +10,7 @@ npx expo start --android
 ```
 
 Copy `.env.example` to `.env` and add the existing Personal Supabase project's public URL and publishable key to enable Auth and sync. Local logging, score calculation, templates, theme selection, and history work without those variables.
+
+## Android preview APK
+
+Download the current preview APK: [Sweatline v1.0.0-preview.1 for Android](https://github.com/wrestle-R/Activity-tracker/releases/download/v1.0.0-preview.1/Sweatline-v1.0.0-preview.1.apk).

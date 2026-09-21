@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { calculateSweatScore, type Run, type Template, type Workout, workoutLoad } from "@/lib/fitness";
+import { calculateSweatScore, type Run, type Template, type Workout } from "@/lib/fitness";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function requireUser() {
@@ -22,8 +22,8 @@ export async function getAppData() {
   const workouts = (workoutsResult.data ?? []) as Workout[];
   const runs = (runsResult.data ?? []) as Run[];
   const score = calculateSweatScore([
-    ...workouts.map((item) => ({ performed_at: item.performed_at, load: workoutLoad(item) })),
-    ...runs.map((item) => ({ performed_at: item.performed_at, load: Number(item.distance_km) * 10 })),
+    ...workouts.map((item) => ({ performed_at: item.performed_at })),
+    ...runs.map((item) => ({ performed_at: item.performed_at })),
   ], profileResult.data?.weekly_target ?? 4);
   return { now, user, profile: profileResult.data, templates: (templatesResult.data ?? []) as Template[], workouts, runs, score };
 }

@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { workoutTemplates } from '@/data/templates';
 
 export type Exercise = { group: string; name: string; targetSets: number; targetReps: string };
 export type LocalTemplate = { id: string; userId: string; name: string; category: 'push' | 'pull' | 'legs' | 'custom'; exercises: Exercise[]; clientUpdatedAt: string; deletedAt?: string | null; synced: boolean };
@@ -29,7 +30,47 @@ export async function insertActivity(input: Omit<Activity, 'id' | 'synced' | 'is
 export async function markActivitySynced(activityId: string) { const db = await dbPromise; await db.runAsync('update sweatline_local_activities set synced = 1 where id = ?', activityId); }
 export async function markTemplateSynced(templateId: string) { const db = await dbPromise; await db.runAsync('update sweatline_local_templates set synced = 1 where id = ?', templateId); }
 
-export async function listTemplates(userId: string): Promise<LocalTemplate[]> { const db = await dbPromise; const rows = await db.getAllAsync<{ id: string; user_id: string; name: string; category: LocalTemplate['category']; exercises: string; client_updated_at: string; deleted_at: string | null; synced: number }>('select * from sweatline_local_templates where user_id = ? and deleted_at is null order by client_updated_at desc', userId); return rows.map((row) => ({ id: row.id, userId: row.user_id, name: row.name, category: row.category, exercises: JSON.parse(row.exercises), clientUpdatedAt: row.client_updated_at, deletedAt: row.deleted_at, synced: !!row.synced })); }
+export async function listTemplates(userId: string, includeDeleted = false): Promise<LocalTemplate[]> { const db = await dbPromise; const rows = await db.getAllAsync<{ id: string; user_id: string; name: string; category: LocalTemplate['category']; exercises: string; client_updated_at: string; deleted_at: string | null; synced: number }>(`select * from sweatline_local_templates where user_id = ? ${includeDeleted ? '' : 'and deleted_at is null'} order by client_updated_at desc`, userId); return rows.map((row) => ({ id: row.id, userId: row.user_id, name: row.name, category: row.category, exercises: JSON.parse(row.exercises), clientUpdatedAt: row.client_updated_at, deletedAt: row.deleted_at, synced: !!row.synced })); }
 export async function saveTemplate(template: Omit<LocalTemplate, 'synced' | 'clientUpdatedAt'> & { clientUpdatedAt?: string }) { const db = await dbPromise; const updated = template.clientUpdatedAt ?? new Date().toISOString(); await db.runAsync('insert into sweatline_local_templates (id,user_id,name,category,exercises,client_updated_at,deleted_at,synced) values (?,?,?,?,?,?,?,0) on conflict(id) do update set name=excluded.name,category=excluded.category,exercises=excluded.exercises,client_updated_at=excluded.client_updated_at,deleted_at=excluded.deleted_at,synced=0', template.id, template.userId, template.name, template.category, JSON.stringify(template.exercises), updated, template.deletedAt ?? null); await queue('template', template.id, template.userId); }
 export async function replaceTemplateFromServer(template: LocalTemplate) { const db = await dbPromise; await db.runAsync('insert into sweatline_local_templates (id,user_id,name,category,exercises,client_updated_at,deleted_at,synced) values (?,?,?,?,?,?,?,1) on conflict(id) do update set name=excluded.name,category=excluded.category,exercises=excluded.exercises,client_updated_at=excluded.client_updated_at,deleted_at=excluded.deleted_at,synced=1 where excluded.client_updated_at >= sweatline_local_templates.client_updated_at', template.id, template.userId, template.name, template.category, JSON.stringify(template.exercises), template.clientUpdatedAt, template.deletedAt ?? null); }
+
+export async function ensureStarterTemplates(userId: string) {
+  const existing = await listTemplates(userId);
+  if (existing.length) return existing;
+  const db = await dbPromise; const updated = new Date().toISOString();
+  for (const template of workoutTemplates) {
+    const templateId = id();
+    await db.runAsync('insert into sweatline_local_templates (id,user_id,name,category,exercises,client_updated_at,deleted_at,synced) values (?,?,?,?,?,?,null,0)', templateId, userId, template.name, template.category, JSON.stringify(template.exercises), updated);
+    await queue('template', templateId, userId);
+  }
+  return listTemplates(userId);
+}
+
+/** Moves data created in guest mode into the account that has just signed in. */
+export async function claimGuestData(userId: string) {
+  const db = await dbPromise; const now = new Date().toISOString();
+  await db.runAsync("update sweatline_local_activities set user_id = ?, synced = 0, client_updated_at = ? where user_id = 'guest'", userId, now);
+  await db.runAsync("update sweatline_outbox set user_id = ? where user_id = 'guest'", userId);
+  const guestTemplates = await listTemplates('guest');
+  for (const template of guestTemplates) {
+    const starter = workoutTemplates.find((item) => item.name === template.name && item.category === template.category);
+    const untouchedStarter = starter && JSON.stringify(starter.exercises) === JSON.stringify(template.exercises);
+    if (untouchedStarter) continue;
+    await db.runAsync('update sweatline_local_templates set user_id = ?, synced = 0, client_updated_at = ? where id = ?', userId, now, template.id);
+    await queue('template', template.id, userId);
+  }
+}
+
+export async function deleteTemplate(templateId: string, userId: string) {
+  const db = await dbPromise; const updated = new Date().toISOString();
+  await db.runAsync('update sweatline_local_templates set deleted_at = ?, client_updated_at = ?, synced = 0 where id = ? and user_id = ?', updated, updated, templateId, userId);
+  await queue('template', templateId, userId);
+}
+
+export async function pendingChanges(userId: string) {
+  const db = await dbPromise;
+  const activity = await db.getFirstAsync<{ total: number }>('select count(*) as total from sweatline_local_activities where user_id = ? and synced = 0', userId);
+  const template = await db.getFirstAsync<{ total: number }>('select count(*) as total from sweatline_local_templates where user_id = ? and synced = 0', userId);
+  return Number(activity?.total ?? 0) + Number(template?.total ?? 0);
+}
 export const createId = id;

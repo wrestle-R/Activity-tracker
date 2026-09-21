@@ -21,7 +21,7 @@ export function getSupabase() {
 
 export async function syncActivities(activities: Activity[]) {
   const client = getSupabase();
-  if (!client) throw new Error('Add the Supabase public URL and publishable key first.');
+  if (!client) throw new Error('Account services are not configured in this build.');
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error('Sign in before syncing.');
   for (const item of activities.filter((activity) => !activity.synced)) {
@@ -38,7 +38,7 @@ export async function syncActivities(activities: Activity[]) {
 
 export async function syncTemplates(templates: LocalTemplate[]) {
   const client = getSupabase();
-  if (!client) throw new Error('Supabase is not configured.');
+  if (!client) throw new Error('Account services are not configured in this build.');
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error('Sign in before syncing.');
   for (const template of templates.filter((item) => !item.synced)) {
